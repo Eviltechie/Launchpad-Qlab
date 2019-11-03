@@ -2,6 +2,8 @@ A bridge between Qlab and a Novation Launchpad MK3, intended for music playout f
 
 May work with other Launchpads (like the X), but it may require some code tweaks.
 
+This runs with node.js. To start, just run "node Launchpad-Qlab.js" in a terminal.
+
 To install, you will need to install "osc" and "midi" from npm. At the time of writing this requires Python 2 (I know) and a C++ compiler for your platform. This can be painful because of the native code in the serialport stuff. I found that installing "serialport" first (which builds libraries), before installing "osc" and "midi" seemed to work best, as at the time of this writing they were using older versions of serialport which did not compile. (But if serialport is installed first it will use what gets compiled during that step.)
 
 ==========

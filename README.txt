@@ -30,6 +30,10 @@ After all this, just start the program and you should see the lights come on to 
 
 You will see log items print to the console. To exit, do Control + C on your keyboard. It will total up play count and times, and print to the console. The log and totals will also be written to a text file.
 
+Don't forget, the Launchpad must be in programmer mode. (Hold session for a second or so, then hit the buttom right orange button, and then session again to exit.)
+
+Also, this program will only read cues on startup. If you move any cues, change tracks, etc., you'll need to restart.
+
 =============
 
 Got questions? File an issue or come find me on the video engineering discord.

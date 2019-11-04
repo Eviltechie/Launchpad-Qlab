@@ -1,22 +1,25 @@
+# Launchpad Qlab
 A bridge between Qlab and a Novation Launchpad MK3, intended for music playout for broadcast TV.
 
 May work with other Launchpads (like the X), but it may require some code tweaks.
 
-This runs with node.js. To start, just run "node Launchpad-Qlab.js" in a terminal.
+---
+## Installation
+```
+git clone https://github.com/Eviltechie/Launchpad-Qlab.git
+cd Launchpad-Qlab
+yarn
+yarn start
+```
 
-To install, you will need to install "osc" and "midi" from npm. At the time of writing this requires Python 2 (I know) and a C++ compiler for your platform. This can be painful because of the native code in the serialport stuff. I found that installing "serialport" first (which builds libraries), before installing "osc" and "midi" seemed to work best, as at the time of this writing they were using older versions of serialport which did not compile. (But if serialport is installed first it will use what gets compiled during that step.)
+## Config
 
-==========
-
-How to use:
-
-Config
-======
 
 First couple of lines you should see host and midiPort. Host is the IP of the computer running Qlab. Normally this would be localhost. (This was developed on and will run on Windows, but that's obviously of dubious value because Qlab is Mac only.) Set midiPort to whatever port you see "Launchpad Mini MK3 LPMiniMK3 MIDI In" listed as (on a Mac, it's different on Windows). Midi ports will be listed when you run the program.
 
-How it Works
-============
+---
+
+## How it Works
 
 This works with the cart wall in Qlab. Setup the wall as you like. For broadcast playout I suggest setting the default music cue to "fade and stop all over 1 second" so that it will cross fade between carts. Don't forget to color your buttons too. You can use any size grid you want, up to 8x8.
 

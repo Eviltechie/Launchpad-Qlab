@@ -1,0 +1,17 @@
+{
+  "name": "Launchpad-Qlab",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/Eviltechie/Launchpad-Qlab",
+  "author": "Eviltechie",
+  "license": "MIT",
+  "scripts": {
+    "start": "node ."
+  },
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "midi": "^1.0.0",
+    "osc": "^2.3.1",
+    "process": "^0.11.10"
+  }
+}

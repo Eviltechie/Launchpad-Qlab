@@ -3,6 +3,11 @@ var midiPort = 2;
 var host = "192.168.1.38";
 //END CONFIG
 
+var osc = require("osc");
+const process = require('process');
+const fs = require('fs');
+const midi = require('midi');
+
 function parseColor(color) {
     switch(color) {
         case "none":
@@ -37,11 +42,7 @@ function setButtonColor(x, y, color, blink) {
     }
 }
 
-var osc = require("osc");
-//const net = require('net');
-const process = require('process');
-const fs = require('fs');
-const midi = require('midi');
+
 var log = []; //Log to sum and write to disk
 
 var workspace; //Workspace uniqueID

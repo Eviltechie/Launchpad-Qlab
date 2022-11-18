@@ -1,0 +1,7 @@
+{
+  "name": "launchpad-qlab",
+  "dependencies": {
+    "midi": "^2.0.0",
+    "osc": "^2.4.3"
+  }
+}

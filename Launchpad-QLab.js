@@ -1,6 +1,6 @@
 //CONFIG
 var midiPort = 1;
-var host = "localhost";
+var host = "127.0.0.1";
 //END CONFIG
 
 function parseColor(color) {

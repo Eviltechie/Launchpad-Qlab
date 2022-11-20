@@ -23,6 +23,23 @@ If any update is received, and that update is not any group cue, then query for 
 
 
 
+We can't clear and set colors on the launchpad every time something updates, since it will cause it to blink.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -56,6 +56,7 @@ function parseColorMuted(color) {
 }
 
 function setButtonColor(x, y, color, blink) {
+
     x = 9 - x;
     x = x * 10;
 
@@ -75,11 +76,10 @@ function clearMainButtons() {
 }
 
 function setButtonColorFromCueID(id) {
-
     cue = getCue(id);
     position = cuePositions.get(id);
 
-    setButtonColor(position[0], position[1], cue.colorName, false);
+    setButtonColor(position[0], position[1], parseColor(cue.colorName), false);
 }
 
 //Open connection to client
@@ -170,12 +170,14 @@ function getCue(id) {
 
 //Adds position data to both the map
 function addPositionToCue(id, args) {
+    args = JSON.parse(args);
     cuePositions.set(id, args.data);
     if (cuePositions.size == numFirstCartCues) {
         console.log("All positions received, setting colors");
-        cuePositions.forEach(id => {
-            setButtonColorFromCueID(id);
-        });
+        clearMainButtons();
+        for (var [key, value] of cuePositions) {
+            setButtonColorFromCueID(key);
+        }
     }
 }
 

@@ -168,16 +168,29 @@ function getCue(id) {
     }
 }
 
+function resetButtonColors() { //Sets button colors without clearing everything first. This prevents flickering.
+    var buttons = Array.from(Array(8), () => new Array(8));
+    for (var [key, value] of cuePositions) {
+        buttons[value[0]-1][value[1]-1] = key; //Subtract 1 since the positions are 1 indexed and not 0 indexed
+    }
+    for (var x = 0; x < 8; x++) {
+        for (var y = 0; y < 8; y++) {
+            if (typeof buttons[x][y] == "undefined") {
+                setButtonColor(x + 1, y + 1, 0, false); //Have to return back to 1 indexed array from 0
+            } else {
+                setButtonColorFromCueID(buttons[x][y]);
+            }
+        }
+    }
+}
+
 //Adds position data to both the map
 function addPositionToCue(id, args) {
     args = JSON.parse(args);
     cuePositions.set(id, args.data);
     if (cuePositions.size == numFirstCartCues) {
         console.log("All positions received, setting colors");
-        clearMainButtons();
-        for (var [key, value] of cuePositions) {
-            setButtonColorFromCueID(key);
-        }
+        resetButtonColors();
     }
 }
 

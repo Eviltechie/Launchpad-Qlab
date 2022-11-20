@@ -4,6 +4,83 @@ var host = "127.0.0.1";
 //END CONFIG
 
 var osc = require("osc");
+var midi = require('midi');
+
+//MIDI SETUP
+var launchpad = new midi.Output();
+
+//List MIDI ports
+console.log("MIDI PORTS:");
+for (var x = 0; x < launchpad.getPortCount(); x++) {
+    console.log("Port " + x + ": " + launchpad.getPortName(x));
+}
+
+console.log("\nOpening MIDI port " + midiPort + "\n");
+launchpad.openPort(midiPort);
+
+launchpad.sendMessage([240, 0, 32, 41, 2, 13, 14, 1, 247]); //Set launchpad to programmers mode
+
+//Turn off all buttons.
+for (x = 0; x < 10; x++) {
+    for (y = 0; y < 10; y++) {
+        setButtonColor(x, y, 0);
+    }
+}
+
+//Set stop button as red (8,9 instead of 9,9 because we ignore the top row)
+setButtonColor(8, 9, parseColor("red"));
+//END MIDI SETUP
+
+//Interpert QLab color to Launchpad color
+function parseColor(color) {
+    switch(color) {
+        case "none":
+            return 3;
+        case "red":
+            return 5;
+        case "orange":
+            return 9;
+        case "green":
+            return 21;
+        case "blue":
+            return 45;
+        case "purple":
+            return 49;
+        default:
+            return 0;
+    }
+}
+
+function parseColorMuted(color) {
+    return 0;
+}
+
+function setButtonColor(x, y, color, blink) {
+    x = 9 - x;
+    x = x * 10;
+
+    if (blink) {
+        launchpad.sendMessage([145, x + y, color]);
+    } else {
+        launchpad.sendMessage([144, x + y, color]);
+    }
+}
+
+function clearMainButtons() {
+    for (x = 0; x <= 8; x++) {
+        for (y = 0; y <= 8; y++) {
+            setButtonColor(x, y, 0);
+        }
+    }
+}
+
+function setButtonColorFromCueID(id) {
+
+    cue = getCue(id);
+    position = cuePositions.get(id);
+
+    setButtonColor(position[0], position[1], cue.colorName, false);
+}
 
 //Open connection to client
 var client = new osc.TCPSocketPort({});
@@ -95,7 +172,10 @@ function getCue(id) {
 function addPositionToCue(id, args) {
     cuePositions.set(id, args.data);
     if (cuePositions.size == numFirstCartCues) {
-        console.log("All positions received");
+        console.log("All positions received, setting colors");
+        cuePositions.forEach(id => {
+            setButtonColorFromCueID(id);
+        });
     }
 }
 
@@ -124,6 +204,22 @@ client.on("message", function (oscMsg, timeTag, info) {
         var cueID = cuePositionMatcher.exec(address)[1];
         console.log("Received cartPosition for cue " + cueID);
         addPositionToCue(cueID, oscMsg.args);
+        return;
+    }
+
+    var cueUpdateMatcher = new RegExp("\/update\/workspace\/" + workspaceID + "\/cue_id\/(.*)", "g");
+    if (cueUpdateMatcher.test(address)) {
+        cueUpdateMatcher.lastIndex = 0;
+        var cueID = cueUpdateMatcher.exec(address)[1];
+        console.log("Cue " + cueID + " updated");
+        if (cueID == "[root group of cue lists]") {
+            return;
+        }
+        cue = getCue(cueID);
+        console.log("Something changed, reloading cue lists");
+        sendOSCAddress("/workspace/" + workspaceID + "/cueLists");
+        numFirstCartCues = 0;
+        cuePositions.clear();
         return;
     }
 

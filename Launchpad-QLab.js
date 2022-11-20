@@ -33,7 +33,8 @@ function sendOSCInteger(address, integer) {
 client.on("ready", refreshWorkspaces);
 
 var workspaceID;
-var cueList;
+var cueList; //List (more like tree) of current cues in the workspace
+var cueMap = new Map(); //Flat map (id, cue) of known cues, excluding group cues. This lets us compare when something changes.
 
 //Handle incoming /reply/workspaces and attempt to connect to first workspace
 function onWorkspaces(args) {
@@ -72,30 +73,15 @@ function onCueLists(args) {
             console.log(cue.type + ": " + cue.listName);
             if (isCart) {
                 //console.log("/cue/" + cue.uniqueID + "/cartPosition/");
+                cueMap.set(cue.uniqueID, cue);
                 sendOSCAddress("/cue_id/" + cue.uniqueID + "/cartPosition");
             }
         });
     });
 }
 
-//Returns the cue (or group) for the provided ID
-/*function getCue(id) {
-    cueList.forEach(group => {
-        if (group.uniqueID == id) {
-            return group;
-        }
-        group.cues.forEach(cue => {
-            if (cue.uniqueID == id) {
-                console.log(cue);
-                return cue;
-            }
-        });
-    });
-
-}*/
-
-//Returns the cue (or group) for the provided ID
-function getCue(id) {
+//Returns the cue (or group) for the provided ID from the list of cues
+function getRawCue(id) {
     for (group of cueList) {
         if (group.uniqueID == id) {
             return group;
@@ -108,16 +94,22 @@ function getCue(id) {
     }
 }
 
+//Returns the cue (or group) for the provided ID from the map of cues.
+function getCue(id) {
+    return cueMap.get(id);
+}
+
+//Adds position data to both the cue list and map
 function addPositionToCue(id, args) {
-    var cue = getCue(id);
+    var cue = getRawCue(id);
     args = JSON.parse(args[0]);
+    cue["position"] = args.data;
+    cue = getCue(id);
     cue["position"] = args.data;
 }
 
 //Handle incoming OSC messages
 client.on("message", function (oscMsg, timeTag, info) {
-    console.log("=====> ", oscMsg);
-
     address = oscMsg.address;
 
     switch (address) {
@@ -131,13 +123,19 @@ client.on("message", function (oscMsg, timeTag, info) {
         case "/reply/workspace/" + workspaceID + "/cueLists":
             onCueLists(oscMsg.args);
             return;
+        case "/update/workspace/" + workspaceID + "/dashboard": //No idea what these are. Don't appear to be documented, or useful.
+            return;
     }
 
     var cuePositionMatcher = new RegExp("\/reply\/cue_id\/(.*)\/cartPosition", "g");
     if (cuePositionMatcher.test(address)) {
         cuePositionMatcher.lastIndex = 0;
-        var cueID = cuePositionMatcher.exec(address)[1]
+        var cueID = cuePositionMatcher.exec(address)[1];
         console.log("Received cartPosition for cue " + cueID);
         addPositionToCue(cueID, oscMsg.args);
+        return;
     }
+
+    console.log(Date.now() + " " + oscMsg.address);
+    //console.log("=====> ", oscMsg);
 });

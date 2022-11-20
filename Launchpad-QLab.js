@@ -34,7 +34,8 @@ client.on("ready", refreshWorkspaces);
 
 var workspaceID;
 var cueList; //List (more like tree) of current cues in the workspace
-var cueMap = new Map(); //Flat map (id, cue) of known cues, excluding group cues. This lets us compare when something changes.
+var cuePositions = new Map();
+var numFirstCartCues = 0;
 
 //Handle incoming /reply/workspaces and attempt to connect to first workspace
 function onWorkspaces(args) {
@@ -63,25 +64,21 @@ function onCueLists(args) {
     cueList = args.data;
     //console.log(JSON.stringify(cueList));
 
-    cueList.forEach(group => {
-        console.log(group.type + ": " + group.listName);
-        var isCart = false;
+
+    for (group of cueList) {
         if (group.type == "Cart") {
-            isCart = true;
-        }
-        group.cues.forEach(cue => {
-            console.log(cue.type + ": " + cue.listName);
-            if (isCart) {
-                //console.log("/cue/" + cue.uniqueID + "/cartPosition/");
-                cueMap.set(cue.uniqueID, cue);
+            for (cue of group.cues) {
                 sendOSCAddress("/cue_id/" + cue.uniqueID + "/cartPosition");
+                numFirstCartCues++;
             }
-        });
-    });
+            console.log("Expecting " + numFirstCartCues + " cart cues");
+            break;
+        }
+    }
 }
 
 //Returns the cue (or group) for the provided ID from the list of cues
-function getRawCue(id) {
+function getCue(id) {
     for (group of cueList) {
         if (group.uniqueID == id) {
             return group;
@@ -94,18 +91,12 @@ function getRawCue(id) {
     }
 }
 
-//Returns the cue (or group) for the provided ID from the map of cues.
-function getCue(id) {
-    return cueMap.get(id);
-}
-
-//Adds position data to both the cue list and map
+//Adds position data to both the map
 function addPositionToCue(id, args) {
-    var cue = getRawCue(id);
-    args = JSON.parse(args[0]);
-    cue["position"] = args.data;
-    cue = getCue(id);
-    cue["position"] = args.data;
+    cuePositions.set(id, args.data);
+    if (cuePositions.size == numFirstCartCues) {
+        console.log("All positions received");
+    }
 }
 
 //Handle incoming OSC messages

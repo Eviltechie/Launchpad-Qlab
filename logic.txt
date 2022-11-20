@@ -1,0 +1,41 @@
+When starting up, we get the list of workspaces and connect to the first one.
+If we receive a disconnect on that workspace, we query the list of workspaces and pick the first one again.
+If we receive an empty list of workspaces, we query again in 2 seconds.
+
+
+When connecting to a workspace, we query for all cues.
+
+
+When we receive all cues, query the position for all cues on the first cart wall.
+Also count how many of those cues/queries we sent out.
+
+
+As we receive cue positions, we store them in a map.
+As we receive each position, compare the size of the map (num received) with the number of cues on the first wall. When these match we have all locations queried.
+
+
+When we have all locations queried, then we can.... (Set colors on launchpad?)
+
+
+If any update is received, and that update is not any group cue, then query for all cues.
+
+
+
+
+
+
+
+
+
+If the lists are the same, then assume a cue is playing/paused/stopped, or it updated position.
+
+
+If any update is received, re-load the entire cue state, and compare it to the last state.
+If they are different, something on the workspace changed (new cue, deleted cue, ~~updated position~~, updated color).
+That is our cue to reload the launchad and set the MIDI values.
+
+If they are the same though, then what changed may be that the cue started/stopped playing.
+In this case, do a shallow query of the currently running cues.
+
+
+Edge case, currently running cue deleted?

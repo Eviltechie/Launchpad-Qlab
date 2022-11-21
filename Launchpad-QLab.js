@@ -7,18 +7,18 @@ var osc = require("osc");
 var midi = require('midi');
 
 //MIDI SETUP
-var launchpad = new midi.Output();
+var launchpadOutput = new midi.Output();
 
 //List MIDI ports
 console.log("MIDI PORTS:");
-for (var x = 0; x < launchpad.getPortCount(); x++) {
-    console.log("Port " + x + ": " + launchpad.getPortName(x));
+for (var x = 0; x < launchpadOutput.getPortCount(); x++) {
+    console.log("Port " + x + ": " + launchpadOutput.getPortName(x));
 }
 
 console.log("\nOpening MIDI port " + midiPort + "\n");
-launchpad.openPort(midiPort);
+launchpadOutput.openPort(midiPort);
 
-launchpad.sendMessage([240, 0, 32, 41, 2, 13, 14, 1, 247]); //Set launchpad to programmers mode
+launchpadOutput.sendMessage([240, 0, 32, 41, 2, 13, 14, 1, 247]); //Set launchpad to programmers mode
 
 //Turn off all buttons.
 for (x = 0; x < 10; x++) {
@@ -31,7 +31,7 @@ for (x = 0; x < 10; x++) {
 setButtonColor(8, 9, parseColor("red"), false);
 //END MIDI SETUP
 
-//Interpert QLab color to Launchpad color
+//Interpert QLab color to launchpadOutput color
 function parseColor(color) {
     switch(color) {
         case "none":
@@ -61,10 +61,10 @@ function setButtonColor(x, y, color, blink) {
     x = x * 10;
 
     if (blink) {
-        launchpad.sendMessage([144, x + y, 0]);
-        launchpad.sendMessage([145, x + y, color]);
+        launchpadOutput.sendMessage([144, x + y, 0]);
+        launchpadOutput.sendMessage([145, x + y, color]);
     } else {
-        launchpad.sendMessage([144, x + y, color]);
+        launchpadOutput.sendMessage([144, x + y, color]);
     }
 }
 

@@ -20,39 +20,12 @@ When we have all locations queried, then we can.... (Set colors on launchpad?)
 If any update is received, and that update is not any group cue, then query for all cues.
 
 
+We can't clear and set colors on the launchpad every time something updates, since it will cause it to blink. Instead we will overwrite each button with its final color.
 
 
-
-We can't clear and set colors on the launchpad every time something updates, since it will cause it to blink.
-
+When connected to a workspace, query for running cues every 250ms.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-If the lists are the same, then assume a cue is playing/paused/stopped, or it updated position.
-
-
-If any update is received, re-load the entire cue state, and compare it to the last state.
-If they are different, something on the workspace changed (new cue, deleted cue, ~~updated position~~, updated color).
-That is our cue to reload the launchad and set the MIDI values.
-
-If they are the same though, then what changed may be that the cue started/stopped playing.
-In this case, do a shallow query of the currently running cues.
-
-
-Edge case, currently running cue deleted?
+When receiving the incoming cues, we will store the UUID in a list.
+If we are adding a running cue to the list, we know it has just started.
+If we are removing a running cue to the list, we know that it has just stopped.

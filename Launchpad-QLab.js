@@ -113,6 +113,8 @@ var workspaceID;
 var cueList; //List (more like tree) of current cues in the workspace
 var cuePositions = new Map();
 var numFirstCartCues = 0;
+var cueQueryInterval;
+var currentlyRunningCues = new Map(); //ID, time started
 
 //Handle incoming /reply/workspaces and attempt to connect to first workspace
 function onWorkspaces(args) {
@@ -126,12 +128,15 @@ function onWorkspaces(args) {
         sendOSCAddress("/workspace/" + workspaceID + "/connect");
         sendOSCInteger("/updates", 1);
         sendOSCAddress("/workspace/" + workspaceID + "/cueLists");
+        cueQueryInterval = setInterval(queryForRunningCues, 250);
     }
 }
 
 //Request list of workspaces in order to attempt to connect to one in onWorkspaces
 function refreshWorkspaces() {
     sendOSCAddress("/workspaces");
+    clearInterval(cueQueryInterval);
+    workspaceID = null;
 }
 
 //Handle incoming cue list, querying cart cues for their position in the wall
@@ -148,7 +153,7 @@ function onCueLists(args) {
                 sendOSCAddress("/cue_id/" + cue.uniqueID + "/cartPosition");
                 numFirstCartCues++;
             }
-            console.log("Expecting " + numFirstCartCues + " cart cues");
+            //console.log("Expecting " + numFirstCartCues + " cart cues");
             break;
         }
     }
@@ -189,9 +194,42 @@ function addPositionToCue(id, args) {
     args = JSON.parse(args);
     cuePositions.set(id, args.data);
     if (cuePositions.size == numFirstCartCues) {
-        console.log("All positions received, setting colors");
+        //console.log("All positions received, setting colors");
         resetButtonColors();
     }
+}
+
+function queryForRunningCues() {
+    sendOSCAddress("/workspace/" + workspaceID + "/runningCues/uniqueIDs");
+}
+
+function onRunningCues(args) {
+    args = JSON.parse(args);
+    var tempRunningCues = [];
+    args.data.forEach(cue => {
+        if (currentlyRunningCues.has(cue.uniqueID)) {
+            //Pass
+        } else {
+            currentlyRunningCues.set(cue.uniqueID, Date.now());
+            console.log("STARTED CUE" + cue.uniqueID);
+        }
+        tempRunningCues.push(cue.uniqueID);
+    });
+    var stoppedCues = [];
+    for (var [key, value] of currentlyRunningCues) {
+        if (tempRunningCues.indexOf(key) == -1) { //If the cue in our list is not contained in this message, we assume it has stopped
+            stoppedCues.push(key);
+            currentlyRunningCues.delete(key);
+        }
+    }
+    console.log(stoppedCues.length);
+    stoppedCues.forEach(cue => {
+        console.log("STOPPED CUE" + cue);
+    });
+
+    //var stoppedCueIDs = runningCues.filter(x => !currentlyRunningCues.includes(x));
+
+    //data[x].uniqueID
 }
 
 //Handle incoming OSC messages
@@ -211,13 +249,16 @@ client.on("message", function (oscMsg, timeTag, info) {
             return;
         case "/update/workspace/" + workspaceID + "/dashboard": //No idea what these are. Don't appear to be documented, or useful.
             return;
+        case "/reply/workspace/" + workspaceID + "/runningCues/uniqueIDs":
+            onRunningCues(oscMsg.args);
+            return;
     }
 
     var cuePositionMatcher = new RegExp("\/reply\/cue_id\/(.*)\/cartPosition", "g");
     if (cuePositionMatcher.test(address)) {
         cuePositionMatcher.lastIndex = 0;
         var cueID = cuePositionMatcher.exec(address)[1];
-        console.log("Received cartPosition for cue " + cueID);
+        //console.log("Received cartPosition for cue " + cueID);
         addPositionToCue(cueID, oscMsg.args);
         return;
     }
@@ -226,12 +267,12 @@ client.on("message", function (oscMsg, timeTag, info) {
     if (cueUpdateMatcher.test(address)) {
         cueUpdateMatcher.lastIndex = 0;
         var cueID = cueUpdateMatcher.exec(address)[1];
-        console.log("Cue " + cueID + " updated");
+        //console.log("Cue " + cueID + " updated");
         if (cueID == "[root group of cue lists]") {
             return;
         }
         cue = getCue(cueID);
-        console.log("Something changed, reloading cue lists");
+        //console.log("Something changed, reloading cue lists");
         sendOSCAddress("/workspace/" + workspaceID + "/cueLists");
         numFirstCartCues = 0;
         cuePositions.clear();

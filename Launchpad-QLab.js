@@ -80,11 +80,11 @@ function setButtonColorFromCueID(id) {
     cue = getCue(id);
     position = cuePositions.get(id);
 
-    //setButtonColor(position[0], position[1], parseColor(cue.colorName), blink);
-
-    //console.log(cue.uniqueID + " " + id + " " + currentlyRunningCues.has(id));
-
-    setButtonColor(position[0], position[1], parseColor(cue.colorName), currentlyRunningCues.has(id));
+    if (typeof position == "undefined") { //Position can come up empty sometimes, presumably if the cue is moving?
+        //Pass
+    } else {
+        setButtonColor(position[0], position[1], parseColor(cue.colorName), currentlyRunningCues.has(id));
+    }
 }
 
 //Open connection to client

@@ -23,12 +23,12 @@ launchpad.sendMessage([240, 0, 32, 41, 2, 13, 14, 1, 247]); //Set launchpad to p
 //Turn off all buttons.
 for (x = 0; x < 10; x++) {
     for (y = 0; y < 10; y++) {
-        setButtonColor(x, y, 0);
+        setButtonColor(x, y, 0, false);
     }
 }
 
 //Set stop button as red (8,9 instead of 9,9 because we ignore the top row)
-setButtonColor(8, 9, parseColor("red"));
+setButtonColor(8, 9, parseColor("red"), false);
 //END MIDI SETUP
 
 //Interpert QLab color to Launchpad color
@@ -61,6 +61,7 @@ function setButtonColor(x, y, color, blink) {
     x = x * 10;
 
     if (blink) {
+        launchpad.sendMessage([144, x + y, 0]);
         launchpad.sendMessage([145, x + y, color]);
     } else {
         launchpad.sendMessage([144, x + y, color]);
@@ -70,7 +71,7 @@ function setButtonColor(x, y, color, blink) {
 function clearMainButtons() {
     for (x = 0; x <= 8; x++) {
         for (y = 0; y <= 8; y++) {
-            setButtonColor(x, y, 0);
+            setButtonColor(x, y, 0, false);
         }
     }
 }
@@ -79,7 +80,11 @@ function setButtonColorFromCueID(id) {
     cue = getCue(id);
     position = cuePositions.get(id);
 
-    setButtonColor(position[0], position[1], parseColor(cue.colorName), false);
+    //setButtonColor(position[0], position[1], parseColor(cue.colorName), blink);
+
+    //console.log(cue.uniqueID + " " + id + " " + currentlyRunningCues.has(id));
+
+    setButtonColor(position[0], position[1], parseColor(cue.colorName), currentlyRunningCues.has(id));
 }
 
 //Open connection to client
@@ -141,7 +146,7 @@ function refreshWorkspaces() {
 
 //Handle incoming cue list, querying cart cues for their position in the wall
 function onCueLists(args) {
-    console.log("Received cue list");
+    //console.log("Received cue list");
     args = JSON.parse(args[0]);
     cueList = args.data;
     //console.log(JSON.stringify(cueList));
@@ -211,7 +216,7 @@ function onRunningCues(args) {
             //Pass
         } else {
             currentlyRunningCues.set(cue.uniqueID, Date.now());
-            console.log("STARTED CUE" + cue.uniqueID);
+            console.log("STARTED CUE " + cue.uniqueID);
         }
         tempRunningCues.push(cue.uniqueID);
     });
@@ -221,12 +226,17 @@ function onRunningCues(args) {
             stoppedCues.push(key);
             currentlyRunningCues.delete(key);
         }
+        setButtonColorFromCueID(key);
     }
-    console.log(stoppedCues.length);
     stoppedCues.forEach(cue => {
-        console.log("STOPPED CUE" + cue);
+        console.log("STOPPED CUE " + cue);
+        //setButtonColorFromCueID(key);
     });
 
+    //console.log(currentlyRunningCues);
+    for (var [key, value] of currentlyRunningCues) {
+        //setButtonColorFromCueID(key);
+    }
     //var stoppedCueIDs = runningCues.filter(x => !currentlyRunningCues.includes(x));
 
     //data[x].uniqueID

@@ -1,5 +1,6 @@
 //CONFIG
-var midiPort = 1;
+var midiOutputPort = 1;
+var midiInputPort = 1;
 var host = "127.0.0.1";
 //END CONFIG
 
@@ -8,15 +9,22 @@ var midi = require('midi');
 
 //MIDI SETUP
 var launchpadOutput = new midi.Output();
+var launchpadInput = new midi.Input();
 
 //List MIDI ports
-console.log("MIDI PORTS:");
+console.log("MIDI OUTPUT PORTS:");
 for (var x = 0; x < launchpadOutput.getPortCount(); x++) {
     console.log("Port " + x + ": " + launchpadOutput.getPortName(x));
 }
 
-console.log("\nOpening MIDI port " + midiPort + "\n");
-launchpadOutput.openPort(midiPort);
+console.log("\nMIDI INPUT PORTS:");
+for (var x = 0; x < launchpadInput.getPortCount(); x++) {
+    console.log("Port " + x + ": " + launchpadInput.getPortName(x));
+}
+
+console.log("\nOpening MIDI ports " + midiOutputPort + "," + midiInputPort + "\n");
+launchpadOutput.openPort(midiOutputPort);
+launchpadInput.openPort(midiInputPort);
 
 launchpadOutput.sendMessage([240, 0, 32, 41, 2, 13, 14, 1, 247]); //Set launchpad to programmers mode
 
@@ -31,7 +39,7 @@ for (x = 0; x < 10; x++) {
 setButtonColor(8, 9, parseColor("red"), false);
 //END MIDI SETUP
 
-//Interpert QLab color to launchpadOutput color
+//Interpert QLab color to launchpad color
 function parseColor(color) {
     switch(color) {
         case "none":
@@ -291,4 +299,22 @@ client.on("message", function (oscMsg, timeTag, info) {
 
     console.log(Date.now() + " " + oscMsg.address);
     //console.log("=====> ", oscMsg);
+});
+
+launchpadInput.on("message", function(deltaTime, message) {
+    if (message[0] == 144 && message[2] == 127) {
+        var x = 9 - Math.floor(message[1] / 10);
+        var y = message[1] % 10;
+        if (workspaceID != null) {
+            for (var [key, value] of cuePositions) {
+                if (value[0] == x && value[1] == y) {
+                    sendOSCAddress("/cue_id/" + key + "/start");
+                }
+            }
+        }
+    } else if (message[0] == 176 && message[1] == 19 && message[2] == 127) {
+        if (workspaceID != null) {
+            sendOSCAddress("/workspace/" + workspaceID + "/panic");
+        }
+    }
 });

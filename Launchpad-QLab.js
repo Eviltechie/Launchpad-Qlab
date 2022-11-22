@@ -297,6 +297,11 @@ client.on("message", function (oscMsg, timeTag, info) {
         return;
     }
 
+    var playbackPositionMatcher = new RegExp("\/update\/workspace\/.*\/cueList\/.*\/playbackPosition", "g"); //Supress these, we don't care about them
+    if (playbackPositionMatcher.test(address)) {
+        return;
+    }
+
     console.log(Date.now() + " " + oscMsg.address);
     //console.log("=====> ", oscMsg);
 });

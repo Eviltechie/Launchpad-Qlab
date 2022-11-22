@@ -223,8 +223,10 @@ function onRunningCues(args) {
         if (currentlyRunningCues.has(cue.uniqueID)) {
             //Pass
         } else {
-            currentlyRunningCues.set(cue.uniqueID, Date.now());
-            console.log("STARTED CUE " + cue.uniqueID);
+            if (cue.cues.length == 0) { //Skip cues with children, e.g. group cues.
+                currentlyRunningCues.set(cue.uniqueID, Date.now());
+                console.log("STARTED CUE " + cue.uniqueID);
+            }
         }
         tempRunningCues.push(cue.uniqueID);
     });
@@ -238,16 +240,7 @@ function onRunningCues(args) {
     }
     stoppedCues.forEach(cue => {
         console.log("STOPPED CUE " + cue);
-        //setButtonColorFromCueID(key);
     });
-
-    //console.log(currentlyRunningCues);
-    for (var [key, value] of currentlyRunningCues) {
-        //setButtonColorFromCueID(key);
-    }
-    //var stoppedCueIDs = runningCues.filter(x => !currentlyRunningCues.includes(x));
-
-    //data[x].uniqueID
 }
 
 //Handle incoming OSC messages

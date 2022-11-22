@@ -213,7 +213,7 @@ function addPositionToCue(id, args) {
 }
 
 function queryForRunningCues() {
-    sendOSCAddress("/workspace/" + workspaceID + "/runningCues/uniqueIDs");
+    sendOSCAddress("/workspace/" + workspaceID + "/runningCues");
 }
 
 function onRunningCues(args) {
@@ -223,9 +223,10 @@ function onRunningCues(args) {
         if (currentlyRunningCues.has(cue.uniqueID)) {
             //Pass
         } else {
-            if (cue.cues.length == 0) { //Skip cues with children, e.g. group cues.
+            if (cue.type != "Start" && cue.type != "Group") { //Skip group and start cues.
                 currentlyRunningCues.set(cue.uniqueID, Date.now());
                 console.log("STARTED CUE " + cue.uniqueID);
+                console.log(cue);
             }
         }
         tempRunningCues.push(cue.uniqueID);
@@ -260,7 +261,7 @@ client.on("message", function (oscMsg, timeTag, info) {
             return;
         case "/update/workspace/" + workspaceID + "/dashboard": //No idea what these are. Don't appear to be documented, or useful.
             return;
-        case "/reply/workspace/" + workspaceID + "/runningCues/uniqueIDs":
+        case "/reply/workspace/" + workspaceID + "/runningCues":
             onRunningCues(oscMsg.args);
             return;
     }

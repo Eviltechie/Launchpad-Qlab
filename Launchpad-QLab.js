@@ -347,6 +347,15 @@ launchpadInput.on("message", function(deltaTime, message) {
 
 http.createServer(function (request, response) {
     var parsed = url.parse(request.url, true);
+
+    if (parsed.query.delete != undefined) {
+        var deleteStmt = db.prepare("DELETE FROM asplay_log WHERE id = ?", parsed.query.delete);
+        deleteStmt.run();
+        response.writeHead(200, {"Content-Type": "text/plain"});
+        response.write("ok");
+        response.end();
+        return;
+    }
     var start_time = new Date();
     start_time.setHours(start_time.getHours() - 12);
     start_time.setSeconds(0);
@@ -364,10 +373,10 @@ http.createServer(function (request, response) {
 
 
     var playbackLog = [];
-    var stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log WHERE start_time >= ? AND stop_time <= ? ORDER BY start_time ASC", start_time.getTime(), end_time.getTime());
+    var stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time, id FROM asplay_log WHERE start_time >= ? AND stop_time <= ? ORDER BY start_time ASC", start_time.getTime(), end_time.getTime());
     stmt.all(function (err, playbackResults) {
         for (var playbackResult of playbackResults) {
-            playbackLog.push(`<tr><td>${playbackResult.music_cut}</td><td>${formatDate(new Date(playbackResult.start_time))}</td><td>${formatDate(new Date(playbackResult.stop_time))}</td><td>${(playbackResult.play_time / 1000).toFixed(1)}</td></tr>`);
+            playbackLog.push(`<tr><td>${playbackResult.music_cut}</td><td>${formatDate(new Date(playbackResult.start_time))}</td><td>${formatDate(new Date(playbackResult.stop_time))}</td><td>${(playbackResult.play_time / 1000).toFixed(1)}</td><td><a onclick="deleteLogEntry(${playbackResult.id})">[X]</a></td></tr>`);
         }
         var totalLog = [];
         var stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log WHERE start_time >= ? AND stop_time <= ? GROUP BY music_cut", start_time.getTime(), end_time.getTime());
@@ -379,7 +388,9 @@ http.createServer(function (request, response) {
             if (range) {
                 filter = `Filtered from ${formatDate(start_time)} to ${formatDate(end_time)}<br><a href="/">Clear filter</a>`;
             }
-            response.writeHead(200, {'Content-Type': 'text/html'});
+            response.writeHead(200, {"Content-Type": "text/html",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST"});
             response.write(`
             <!DOCTYPE html>
             <html>
@@ -407,7 +418,7 @@ http.createServer(function (request, response) {
                 ${filter}
                 <h2>Log</h2>
                 <table>
-                    <tr><th>Cut Name</th><th>Start Time</th><th>Stop Time</th><th>Play Time</th></tr>
+                    <tr><th>Cut Name</th><th>Start Time</th><th>Stop Time</th><th>Play Time</th><th>Delete</th></tr>
                     ${playbackLog.join("")}
                 </table>
                 <h2>Totals</h2>
@@ -416,6 +427,11 @@ http.createServer(function (request, response) {
                     ${totalLog.join("")}
                 </table>
             </body>
+            <script>
+                function deleteLogEntry(id) {
+                    fetch(".?delete=" + id, {mode: "no-cors"}).then(location.reload());
+                }
+            </script>
             </html>
             `);
             response.end();

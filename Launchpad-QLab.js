@@ -4,6 +4,7 @@ var midiInputPort = 1;
 var host = "127.0.0.1";
 //END CONFIG
 
+var http = require('http');
 var osc = require("osc");
 var midi = require('midi');
 
@@ -136,6 +137,10 @@ function sendOSCInteger(address, integer) {
             }
         ]
     });
+}
+
+function formatDate(date) {
+    return `${date.getFullYear()}-${("0" + date.getMonth()).slice(-2)}-${("0" + date.getDate()).slice(-2)} ${("0" + date.getHours()).slice(-2)}:${("0" + date.getMinutes()).slice(-2)}:${("0" + date.getSeconds()).slice(-2)}`;
 }
 
 //When we are connected...
@@ -341,3 +346,48 @@ launchpadInput.on("message", function(deltaTime, message) {
         }
     }
 });
+
+http.createServer(function (request, response) {
+    var one_hour_ago = new Date();
+    one_hour_ago.setHours(one_hour_ago.getHours() - 1);
+
+    var playbackLog = [];
+    var stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log");
+    stmt.all(function (err, rows) {
+        for (var row of rows) {
+            playbackLog.push(`<tr><td>${row.music_cut}</td><td>${row.start_time}</td><td>${row.stop_time}</td><td>${row.play_time}</td></tr>`);
+            console.log(playbackLog);
+        }
+    });
+    stmt.finalize();
+    console.log(playbackLog);
+
+    
+
+
+    response.writeHead(200, {'Content-Type': 'text/html'});
+    response.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Launchpad QLab</title>
+    </head>
+    <body>
+        <h1>Launchpad QLab</h1>
+        <form>
+            <label>YYYY-MM-DD HH:MM:SS (24hr clock)</label><br>
+            <label for="start_time">Start time:</label>
+            <input id="start_time" type="text" value="${formatDate(one_hour_ago)}">
+            <label for="end_time">End time:</label>
+            <input id="end_time" type="text" value="${formatDate(new Date())}">
+            <input type="submit">
+        </form>
+        <table>
+            <tr><th>Cut Name</th><th>Start Time</th><th>Stop Time</th><th>Play Time</th></tr>
+            ${playbackLog.join()}
+        </table>
+    </body>
+    </html> 
+    `);
+    response.end();
+}).listen(8080);

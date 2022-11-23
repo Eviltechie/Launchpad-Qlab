@@ -267,10 +267,6 @@ function onRunningCues(args) {
         }
         setButtonColorFromCueID(key);
     }
-    /*stoppedCues.forEach(cue => {
-        console.log("STOPPED CUE " + cue);
-        console.log(cue);
-    });*/
 }
 
 //Handle incoming OSC messages
@@ -353,41 +349,55 @@ http.createServer(function (request, response) {
 
     var playbackLog = [];
     var stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log");
-    stmt.all(function (err, rows) {
-        for (var row of rows) {
-            playbackLog.push(`<tr><td>${row.music_cut}</td><td>${row.start_time}</td><td>${row.stop_time}</td><td>${row.play_time}</td></tr>`);
-            console.log(playbackLog);
+    stmt.all(function (err, playbackResults) {
+        for (var playbackResult of playbackResults) {
+            playbackLog.push(`<tr><td>${playbackResult.music_cut}</td><td>${formatDate(new Date(playbackResult.start_time))}</td><td>${formatDate(new Date(playbackResult.stop_time))}</td><td>${(playbackResult.play_time / 1000).toFixed(1)}</td></tr>`);
         }
+        var totalLog = [];
+        var stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log GROUP BY music_cut");
+        stmt2.all(function (err, totalResults) {
+            for (var totalResult of totalResults) {
+                totalLog.push(`<tr><td>${totalResult.music_cut}</td><td>${totalResult.play_count}</td><td>${(totalResult.play_time / 1000).toFixed(1)}</td></tr>`);
+            }
+            response.writeHead(200, {'Content-Type': 'text/html'});
+            response.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+            <title>Launchpad QLab</title>
+            <style>
+                table, th, td {
+                    border: 1px solid black;
+                    padding: 5px;
+                }
+            </style>
+            </head>
+            <body>
+                <h1>Launchpad QLab</h1>
+                <form>
+                    <label>YYYY-MM-DD HH:MM:SS (24hr clock)</label><br>
+                    <label for="start_time">Start time:</label>
+                    <input id="start_time" type="text" value="${formatDate(one_hour_ago)}">
+                    <label for="end_time">End time:</label>
+                    <input id="end_time" type="text" value="${formatDate(new Date())}">
+                    <input type="submit"><br>
+                </form>
+                <h2>Log</h2>
+                <table>
+                    <tr><th>Cut Name</th><th>Start Time</th><th>Stop Time</th><th>Play Time</th></tr>
+                    ${playbackLog.join("")}
+                </table>
+                <h2>Totals</h2>
+                <table>
+                    <tr><th>Cut Name</th><th>Total Plays</th><th>Total Time</th></tr>
+                    ${totalLog.join("")}
+                </table>
+            </body>
+            </html> 
+            `);
+            response.end();
+        });
+        stmt2.finalize();
     });
     stmt.finalize();
-    console.log(playbackLog);
-
-    
-
-
-    response.writeHead(200, {'Content-Type': 'text/html'});
-    response.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <title>Launchpad QLab</title>
-    </head>
-    <body>
-        <h1>Launchpad QLab</h1>
-        <form>
-            <label>YYYY-MM-DD HH:MM:SS (24hr clock)</label><br>
-            <label for="start_time">Start time:</label>
-            <input id="start_time" type="text" value="${formatDate(one_hour_ago)}">
-            <label for="end_time">End time:</label>
-            <input id="end_time" type="text" value="${formatDate(new Date())}">
-            <input type="submit">
-        </form>
-        <table>
-            <tr><th>Cut Name</th><th>Start Time</th><th>Stop Time</th><th>Play Time</th></tr>
-            ${playbackLog.join()}
-        </table>
-    </body>
-    </html> 
-    `);
-    response.end();
 }).listen(8080);

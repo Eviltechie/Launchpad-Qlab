@@ -348,8 +348,10 @@ launchpadInput.on("message", function(deltaTime, message) {
 http.createServer(function (request, response) {
     var parsed = url.parse(request.url, true);
     var start_time = new Date();
-    start_time.setHours(start_time.getHours() - 1);
+    start_time.setHours(start_time.getHours() - 12);
+    start_time.setSeconds(0);
     var end_time = new Date();
+    end_time.setSeconds(60);
     var range = false;
     if (parsed.query.start_time == undefined && parsed.query.stop_time == undefined) {
         //Pass
@@ -357,29 +359,25 @@ http.createServer(function (request, response) {
         range = true;
         start_time = new Date(parsed.query.start_time);
         end_time = new Date(parsed.query.end_time);
+        end_time.setMilliseconds(999);
     }
 
+
     var playbackLog = [];
-    var stmt;
-    if (range) {
-        stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log WHERE start_time >= ? AND stop_time <= ? ORDER BY start_time ASC", start_time.getTime(), end_time.getTime());
-    } else {
-        stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log");
-    }
+    var stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log WHERE start_time >= ? AND stop_time <= ? ORDER BY start_time ASC", start_time.getTime(), end_time.getTime());
     stmt.all(function (err, playbackResults) {
         for (var playbackResult of playbackResults) {
             playbackLog.push(`<tr><td>${playbackResult.music_cut}</td><td>${formatDate(new Date(playbackResult.start_time))}</td><td>${formatDate(new Date(playbackResult.stop_time))}</td><td>${(playbackResult.play_time / 1000).toFixed(1)}</td></tr>`);
         }
         var totalLog = [];
-        var stmt2;
-        if (range) {
-            stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log WHERE start_time >= ? AND stop_time <= ? GROUP BY music_cut", start_time.getTime(), end_time.getTime());
-        } else {
-            stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log GROUP BY music_cut");
-        }
+        var stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log WHERE start_time >= ? AND stop_time <= ? GROUP BY music_cut", start_time.getTime(), end_time.getTime());
         stmt2.all(function (err, totalResults) {
             for (var totalResult of totalResults) {
                 totalLog.push(`<tr><td>${totalResult.music_cut}</td><td>${totalResult.play_count}</td><td>${(totalResult.play_time / 1000).toFixed(1)}</td></tr>`);
+            }
+            var filter = "Showing last 12 hours";
+            if (range) {
+                filter = `Filtered from ${formatDate(start_time)} to ${formatDate(end_time)}<br><a href="/">Clear filter</a>`;
             }
             response.writeHead(200, {'Content-Type': 'text/html'});
             response.write(`
@@ -398,13 +396,15 @@ http.createServer(function (request, response) {
             <body>
                 <h1>Launchpad QLab</h1>
                 <form>
-                    <label>YYYY-MM-DD HH:MM:SS (24hr clock)</label><br>
+                    <label><small>YYYY-MM-DD HH:MM:SS (24hr clock)</small></label><br>
                     <label for="start_time">Start time:</label>
-                    <input id="start_time" type="text" name="start_time" value="${formatDate(start_time)}">
+                    <input id="start_time" type="text" name="start_time" value="${formatDate(start_time)}" autocomplete="off">
                     <label for="end_time">End time:</label>
-                    <input id="end_time" type="text" name="end_time" value="${formatDate(end_time)}">
-                    <input type="submit"><br>
+                    <input id="end_time" type="text" name="end_time" value="${formatDate(end_time)}" autocomplete="off">
+                    <input type="submit" value="Filter"><br>
                 </form>
+                <br>
+                ${filter}
                 <h2>Log</h2>
                 <table>
                     <tr><th>Cut Name</th><th>Start Time</th><th>Stop Time</th><th>Play Time</th></tr>

@@ -142,7 +142,7 @@ function sendOSCInteger(address, integer) {
 }
 
 function formatDate(date) {
-    return `${date.getFullYear()}-${("0" + date.getMonth()).slice(-2)}-${("0" + date.getDate()).slice(-2)} ${("0" + date.getHours()).slice(-2)}:${("0" + date.getMinutes()).slice(-2)}:${("0" + date.getSeconds()).slice(-2)}`;
+    return `${date.getFullYear()}-${("0" + (date.getMonth() + 1)).slice(-2)}-${("0" + date.getDate()).slice(-2)} ${("0" + date.getHours()).slice(-2)}:${("0" + date.getMinutes()).slice(-2)}:${("0" + date.getSeconds()).slice(-2)}`;
 }
 
 //When we are connected...
@@ -362,7 +362,7 @@ http.createServer(function (request, response) {
     var playbackLog = [];
     var stmt;
     if (range) {
-        stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log WHERE start_time <= ? AND stop_time >= ?", start_time.getTime(), end_time.getTime());
+        stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log WHERE start_time >= ? AND stop_time <= ? ORDER BY start_time ASC", start_time.getTime(), end_time.getTime());
     } else {
         stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log");
     }
@@ -373,7 +373,7 @@ http.createServer(function (request, response) {
         var totalLog = [];
         var stmt2;
         if (range) {
-            stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log WHERE start_time <= ? AND stop_time >= ? GROUP BY music_cut", start_time.getTime(), end_time.getTime());
+            stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log WHERE start_time >= ? AND stop_time <= ? GROUP BY music_cut", start_time.getTime(), end_time.getTime());
         } else {
             stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log GROUP BY music_cut");
         }

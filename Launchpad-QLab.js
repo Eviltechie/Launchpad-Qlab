@@ -39,6 +39,25 @@ for (x = 0; x < 10; x++) {
 setButtonColor(8, 9, parseColor("red"), false);
 //END MIDI SETUP
 
+//DB
+const sqlite3 = require("sqlite3");
+const db = new sqlite3.Database("asplay.db");
+
+var table = `
+CREATE TABLE IF NOT EXISTS asplay_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT
+                       NOT NULL,
+    music_cut  TEXT    NOT NULL,
+    start_time INTEGER NOT NULL,
+    stop_time  INTEGER NOT NULL
+);
+`
+var statement;
+db.run(table, function (err) {
+    statement = db.prepare("INSERT INTO asplay_log (music_cut, start_time, stop_time) VALUES (?, ?, ?)");
+});
+//END DB
+
 //Interpert QLab color to launchpad color
 function parseColor(color) {
     switch(color) {
@@ -128,6 +147,7 @@ var cuePositions = new Map();
 var numFirstCartCues = 0;
 var cueQueryInterval;
 var currentlyRunningCues = new Map(); //ID, time started
+var cueNames = new Map(); //Map of UUID, listName of all known cues that have played at least once.
 
 //Handle incoming /reply/workspaces and attempt to connect to first workspace
 function onWorkspaces(args) {
@@ -225,8 +245,8 @@ function onRunningCues(args) {
         } else {
             if (cue.type != "Start" && cue.type != "Group") { //Skip group and start cues.
                 currentlyRunningCues.set(cue.uniqueID, Date.now());
+                cueNames.set(cue.uniqueID, cue.listName);
                 console.log("STARTED CUE " + cue.uniqueID);
-                console.log(cue);
             }
         }
         tempRunningCues.push(cue.uniqueID);
@@ -236,12 +256,16 @@ function onRunningCues(args) {
         if (tempRunningCues.indexOf(key) == -1) { //If the cue in our list is not contained in this message, we assume it has stopped
             stoppedCues.push(key);
             currentlyRunningCues.delete(key);
+            
+            console.log("STOPPED CUE " + key + " " + cueNames.get(key));
+            statement.run(cueNames.get(key), value, Date.now());
         }
         setButtonColorFromCueID(key);
     }
-    stoppedCues.forEach(cue => {
+    /*stoppedCues.forEach(cue => {
         console.log("STOPPED CUE " + cue);
-    });
+        console.log(cue);
+    });*/
 }
 
 //Handle incoming OSC messages

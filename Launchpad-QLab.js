@@ -7,6 +7,7 @@ var host = "127.0.0.1";
 var http = require('http');
 var osc = require("osc");
 var midi = require('midi');
+var url = require('url');
 
 //MIDI SETUP
 var launchpadOutput = new midi.Output();
@@ -42,6 +43,7 @@ setButtonColor(8, 9, parseColor("red"), false);
 
 //DB
 const sqlite3 = require("sqlite3");
+const { start } = require('repl');
 const db = new sqlite3.Database("asplay.db");
 
 var table = `
@@ -344,17 +346,37 @@ launchpadInput.on("message", function(deltaTime, message) {
 });
 
 http.createServer(function (request, response) {
-    var one_hour_ago = new Date();
-    one_hour_ago.setHours(one_hour_ago.getHours() - 1);
+    var parsed = url.parse(request.url, true);
+    var start_time = new Date();
+    start_time.setHours(start_time.getHours() - 1);
+    var end_time = new Date();
+    var range = false;
+    if (parsed.query.start_time == undefined && parsed.query.stop_time == undefined) {
+        //Pass
+    } else {
+        range = true;
+        start_time = new Date(parsed.query.start_time);
+        end_time = new Date(parsed.query.end_time);
+    }
 
     var playbackLog = [];
-    var stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log");
+    var stmt;
+    if (range) {
+        stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log WHERE start_time <= ? AND stop_time >= ?", start_time.getTime(), end_time.getTime());
+    } else {
+        stmt = db.prepare("SELECT music_cut, start_time, stop_time, (stop_time - start_time) AS play_time FROM asplay_log");
+    }
     stmt.all(function (err, playbackResults) {
         for (var playbackResult of playbackResults) {
             playbackLog.push(`<tr><td>${playbackResult.music_cut}</td><td>${formatDate(new Date(playbackResult.start_time))}</td><td>${formatDate(new Date(playbackResult.stop_time))}</td><td>${(playbackResult.play_time / 1000).toFixed(1)}</td></tr>`);
         }
         var totalLog = [];
-        var stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log GROUP BY music_cut");
+        var stmt2;
+        if (range) {
+            stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log WHERE start_time <= ? AND stop_time >= ? GROUP BY music_cut", start_time.getTime(), end_time.getTime());
+        } else {
+            stmt2 = db.prepare("SELECT music_cut, count(music_cut) AS play_count, SUM(stop_time - start_time) AS play_time FROM asplay_log GROUP BY music_cut");
+        }
         stmt2.all(function (err, totalResults) {
             for (var totalResult of totalResults) {
                 totalLog.push(`<tr><td>${totalResult.music_cut}</td><td>${totalResult.play_count}</td><td>${(totalResult.play_time / 1000).toFixed(1)}</td></tr>`);
@@ -364,22 +386,23 @@ http.createServer(function (request, response) {
             <!DOCTYPE html>
             <html>
             <head>
-            <title>Launchpad QLab</title>
-            <style>
-                table, th, td {
-                    border: 1px solid black;
-                    padding: 5px;
-                }
-            </style>
+                <meta charset="UTF-8">
+                <title>Launchpad QLab</title>
+                <style>
+                    table, th, td {
+                        border: 1px solid black;
+                        padding: 5px;
+                    }
+                </style>
             </head>
             <body>
                 <h1>Launchpad QLab</h1>
                 <form>
                     <label>YYYY-MM-DD HH:MM:SS (24hr clock)</label><br>
                     <label for="start_time">Start time:</label>
-                    <input id="start_time" type="text" value="${formatDate(one_hour_ago)}">
+                    <input id="start_time" type="text" name="start_time" value="${formatDate(start_time)}">
                     <label for="end_time">End time:</label>
-                    <input id="end_time" type="text" value="${formatDate(new Date())}">
+                    <input id="end_time" type="text" name="end_time" value="${formatDate(end_time)}">
                     <input type="submit"><br>
                 </form>
                 <h2>Log</h2>
@@ -393,7 +416,7 @@ http.createServer(function (request, response) {
                     ${totalLog.join("")}
                 </table>
             </body>
-            </html> 
+            </html>
             `);
             response.end();
         });

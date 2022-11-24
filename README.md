@@ -66,7 +66,7 @@ Unlike before, don't map the MIDI triggers of individual cues (or panic all) to 
 
 It is now safe to edit the workspace while this program is running. You can add, edit, or delete cues and you will see your changes reflected instantly.
 
-### Suggested QLab Default Cart Settings
+## Suggested QLab Default Cart Settings
 Here are some default settings to help you get started.
 
 **Music Cues**
@@ -76,7 +76,7 @@ Here are some default settings to help you get started.
 **Group Cues**
  - Check Fade & Stop all over time: 00:01.0
 
-### Playing Out Multiple Cuts Simultaneously (For Commercial and Sanitized Playback)
+## Playing Out Multiple Cuts Simultaneously (For Commercial and Sanitized Playback)
 If you are in a situation where you need to playback two cuts of music simultaneously (for a commercial and sanitized mix like ESPN requires), you're covered.
 
 This will require an audio output device with at least four channels and the QLab audio license.

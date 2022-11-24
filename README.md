@@ -52,7 +52,7 @@ To exit the program, hit `Ctrl + C`.
 
 Instead of writing the log to a text file on close, this program now logs everything to a sqlite database, `asplay.db`. This allows for continuous logging reducing the chance that something is missed. It also means that the program can be kept running for long periods of time, and log files can be generated as needed. It also allows for individual log entries to be deleted, in case of a mis triggering.
 
-To access the log, open a browser and navigate to your IP address on port 8080. (e.g. http://127.0.0.1:8080) You should see the playback log, as well as totals from the last 12 hours. You can customize the date range by entering a start time and end time, and pressing filter. (Tip: The start and end times listed in the table are the same format that you should enter to filter. Just copy and paste!)
+To access the log, open a browser and navigate to your IP address on port 8080. (e.g. http://127.0.0.1:8080) You should see the playback log, as well as totals from the last 12 hours. You can customize the date range by entering a start time and end time, and pressing filter. (Tip: The start and end times listed in the table are the same format that you should enter to filter. Find your opening and closing music cuts and just copy and paste!)
 
 To delete an individual log entry, click the `[X]` next to the corresponding item in the log.
 

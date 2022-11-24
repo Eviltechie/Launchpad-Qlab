@@ -118,8 +118,8 @@ function setButtonColorFromCueID(id) {
 }
 
 //Open connection to client
-var client = new osc.TCPSocketPort({});
-client.open(host, 53000);
+var client = new osc.TCPSocketPort({address: host, port: 53000});
+client.open();
 
 //Send an address only OSC message
 function sendOSCAddress(address) {
@@ -155,6 +155,7 @@ var numFirstCartCues = 0;
 var cueQueryInterval;
 var currentlyRunningCues = new Map(); //ID, time started
 var cueNames = new Map(); //Map of UUID, listName of all known cues that have played at least once.
+var connected = true;
 
 //Handle incoming /reply/workspaces and attempt to connect to first workspace
 function onWorkspaces(args) {
@@ -326,6 +327,31 @@ client.on("message", function (oscMsg, timeTag, info) {
     console.log(Date.now() + " " + oscMsg.address);
     //console.log("=====> ", oscMsg);
 });
+
+client.on("error", function(error) {
+    console.log(error);
+    if (error.code = "ECONNREFUSED") {
+        console.log("Connection refused, is QLab open? Retrying in 2 seconds.");
+        connected = false;
+        clearMainButtons();
+        setButtonColor(8, 9, 0, false);
+    }
+});
+
+client.on("close", function(error) {
+    console.log("Connection closed. Retrying in 2 seconds.");
+    client.socket.removeAllListeners();
+    connected = false;
+    clearMainButtons();
+    setButtonColor(8, 9, 0, false);
+});
+
+setInterval(() => {
+    if (!connected) {
+        client.open();
+        connected = true;
+    }
+}, 2000);
 
 launchpadInput.on("message", function(deltaTime, message) {
     if (message[0] == 144 && message[2] == 127) {

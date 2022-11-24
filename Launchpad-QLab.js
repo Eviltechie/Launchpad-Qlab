@@ -43,8 +43,8 @@ setButtonColor(8, 9, parseColor("red"), false);
 
 //DB
 const sqlite3 = require("sqlite3");
-const { start } = require('repl');
 const db = new sqlite3.Database("asplay.db");
+const process = require("process");
 
 var table = `
 CREATE TABLE IF NOT EXISTS asplay_log (
@@ -470,3 +470,10 @@ http.createServer(function (request, response) {
     });
     stmt.finalize();
 }).listen(8080);
+
+process.on("SIGINT", function() {
+    clearMainButtons();
+    setButtonColor(8, 9, 0, false);
+    db.close();
+    process.exit(0);
+});

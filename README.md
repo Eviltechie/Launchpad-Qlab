@@ -62,9 +62,9 @@ Should the log need to be totally cleared, stop the program and delete `asplay.d
 
 ## Notable Changes from the Previous Version
 
-Unlike before, don't map the MIDI triggers of individual cues (or panic all) to the buttons on the Launchpad. This program will listen for the MIDI and trigger QLab over OSC. This should alleviate the AD asking for "one more cut" of music in the middle of the show, screwing up logging, or worse, crashing and stopping the log.
+Unlike before, don't map the MIDI triggers of individual cues (or panic all) to the buttons on the Launchpad. This program will listen for the MIDI and trigger QLab over OSC.
 
-It is now safe to edit the workspace while this program is running. You can add, edit, or delete cues and you will see your changes reflected instantly.
+It is now safe to edit the workspace while this program is running. You can add, edit, or delete cues and you will see your changes reflected instantly. This should alleviate the AD asking for "one more cut" of music in the middle of the show, screwing up logging, or worse, crashing and stopping the log.
 
 ## Suggested QLab Default Cart Settings
 Here are some default settings to help you get started.
